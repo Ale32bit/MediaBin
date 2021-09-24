@@ -56,22 +56,19 @@ namespace MediaBin
                 endpoints.MapControllerRoute(
                     name: "default",
                     pattern: "{controller=Home}/{action=Index}/{id?}");
-            });
 
-            app.Use(async (context, next) =>
-            {
-                if (fileStore.Files.Any(m => m.FileName == Path.GetFileName(context.Request.Path.Value)))
+                endpoints.Map("/{file}", async (context) =>
                 {
-                    var file = fileStore.Files.First(m => m.FileName == Path.GetFileName(context.Request.Path.Value));
-                    file.Content = await fileStore.ReadAsync(file);
-                    context.Response.StatusCode = 200;
-                    context.Response.ContentType = file.Type;
-                    await context.Response.Body.WriteAsync(file.Content, 0, file.Content.Length);
-                    context.Response.Body.Close();
-                } else
-                {
-                    next();
-                }
+                    var file = fileStore.Files.FirstOrDefault(m => m.FileName == context.Request.RouteValues["file"] as string);
+                    if (file != null)
+                    {
+                        file.Content = await fileStore.ReadAsync(file);
+                        context.Response.StatusCode = 200;
+                        context.Response.ContentType = file.Type;
+                        await context.Response.Body.WriteAsync(file.Content, 0, file.Content.Length);
+                        context.Response.Body.Close();
+                    }
+                });
             });
         }
     }

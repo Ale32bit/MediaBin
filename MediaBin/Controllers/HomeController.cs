@@ -40,19 +40,21 @@ namespace MediaBin.Controllers
         }
 
         // GET: Files/Details/5
-        public async Task<IActionResult> Details(string? fileName)
+        public async Task<IActionResult> Details(string? id)
         {
-            if (string.IsNullOrEmpty(fileName))
+            if (string.IsNullOrEmpty(id))
             {
                 return NotFound();
             }
 
             var file = _fileStore.Files
-                .FirstOrDefault(m => m.FileName == fileName);
+                .FirstOrDefault(m => m.FileName == id);
             if (file == null)
             {
                 return NotFound();
             }
+
+            ViewData["FriendlySize"] = Utils.FriendlySize(file.Size);
 
             return View(file);
         }
@@ -70,11 +72,21 @@ namespace MediaBin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Upload([Bind("FileName,File")] DTO.FileUpload userFile)
         {
+            if(userFile.File == null)
+            {
+                ModelState.AddModelError("File", "Please select a file.");
+            }
+
             if (ModelState.IsValid)
             {
                 var extension = Path.GetExtension(userFile.File.FileName);
 
-                var name = GenerateFileName(extension);
+                string name = GenerateFileName(extension);
+                if(!string.IsNullOrWhiteSpace(userFile.FileName))
+                {
+                    var invalids = Path.GetInvalidFileNameChars();
+                    name = string.Join("_", userFile.FileName.Split(invalids, StringSplitOptions.RemoveEmptyEntries)).TrimEnd('.');
+                }
 
                 var localFile = new Models.File
                 {
@@ -87,20 +99,53 @@ namespace MediaBin.Controllers
                 localFile.Content = memoryStream.ToArray();
 
                 await _fileStore.AddAsync(localFile);
-                return RedirectToAction(nameof(Index));
+                return Redirect("/" + name);
             }
             return View(userFile);
         }
 
-        // GET: Files/Delete/5
-        public async Task<IActionResult> Delete(string? fileName)
+        public async Task<IActionResult> Edit(string? id)
         {
-            if (fileName == null)
+            if (string.IsNullOrEmpty(id))
             {
                 return NotFound();
             }
 
-            var file = _fileStore.Files.FirstOrDefault(m => m.FileName == fileName);
+            var file = _fileStore.Files
+                .FirstOrDefault(m => m.FileName == id);
+            if (file == null)
+            {
+                return NotFound();
+            }
+
+            return View(file);
+        }
+
+        [HttpPost, ActionName("Edit")]
+        public async Task<IActionResult> Edit(string id, [Bind("FileName")] Models.File file)
+        {
+            if (string.IsNullOrWhiteSpace(file.FileName))
+            {
+                ModelState.AddModelError("File", "Please select a file.");
+            }
+
+            if(ModelState.IsValid)
+            {
+
+            }
+
+            return RedirectToAction("Details", new { id = file.FileName });
+        }
+
+        // GET: Files/Delete/5
+        public async Task<IActionResult> Delete(string? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var file = _fileStore.Files.FirstOrDefault(m => m.FileName == id);
             if (file == null)
             {
                 return NotFound();
@@ -112,16 +157,16 @@ namespace MediaBin.Controllers
         // POST: Files/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(string fileName)
+        public async Task<IActionResult> DeleteConfirmed(string id)
         {
-            var file = _fileStore.Files.FirstOrDefault(m => m.FileName == fileName);
+            var file = _fileStore.Files.FirstOrDefault(m => m.FileName == id);
             _fileStore.Remove(file);
             return RedirectToAction(nameof(Index));
         }
 
-        private bool FileExists(string fileName)
+        private bool FileExists(string id)
         {
-            return _fileStore.Files.Any(e => e.FileName == fileName);
+            return _fileStore.Files.Any(e => e.FileName == id);
         }
 
         private string GenerateFileName(string ext = "")

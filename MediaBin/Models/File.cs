@@ -18,5 +18,6 @@ namespace MediaBin.Models
         {
             get => MimeTypes.GetMimeType(Extension);
         }
+        public long Size { get; set; }
     }
 }

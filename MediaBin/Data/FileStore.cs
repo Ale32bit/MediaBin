@@ -30,10 +30,11 @@ namespace MediaBin.Data
             var files = new List<LocalFile>();
             foreach (var fileName in fileList)
             {
-                var localFile = new LocalFile
+                LocalFile localFile = new()
                 {
                     FileName = Path.GetFileName(fileName),
-                    CreationDate = File.GetCreationTimeUtc(Path.Combine(_path, fileName)),
+                    CreationDate = File.GetCreationTimeUtc(fileName),
+                    Size = new FileInfo(fileName).Length,
                 };
 
                 files.Add(localFile);
@@ -46,7 +47,7 @@ namespace MediaBin.Data
         {
             if (file.Content == null)
             {
-                throw new ArgumentNullException($"{nameof(file.Content)} is null.");
+                throw new NullReferenceException("Content reference not set to an instance of an object.");
             }
 
             if (Exists(file))
@@ -61,7 +62,7 @@ namespace MediaBin.Data
         {
             if (file.Content == null)
             {
-                throw new ArgumentNullException($"{nameof(file.Content)} is null.");
+                throw new NullReferenceException("Content reference not set to an instance of an object.");
             }
 
             if (!Exists(file))
@@ -82,18 +83,9 @@ namespace MediaBin.Data
             File.Delete(Path.Combine(_path, file.FileName));
         }
 
-        public LocalFile Rename(LocalFile file, string newName)
+        public void Rename(LocalFile file, string newName)
         {
             File.Move(Path.Combine(_path, file.FileName), Path.Combine(_path, newName));
-
-            var localFile = new LocalFile
-            {
-                FileName = Path.GetFileName(newName),
-                CreationDate = File.GetCreationTimeUtc(Path.Combine(_path, newName)),
-            };
-
-            return localFile;
-
         }
 
         public bool Exists(LocalFile file)

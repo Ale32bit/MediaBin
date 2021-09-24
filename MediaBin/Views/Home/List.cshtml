@@ -1,10 +1,10 @@
 ﻿@model IEnumerable<MediaBin.Models.File>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "List";
 }
 
-<h1>Index</h1>
+<h1>File List</h1>
 
 <p>
     <a asp-action="Create">Create New</a>
@@ -16,7 +16,7 @@
                 @Html.DisplayNameFor(model => model.FileName)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Type)
+                @Html.DisplayNameFor(model => model.Size)
             </th>
             <th>
                 @Html.DisplayNameFor(model => model.CreationDate)
@@ -32,7 +32,7 @@
                     <a href="/@item.FileName">@Html.DisplayFor(modelItem => item.FileName)</a>
                 </td>
                 <td>
-                    @Html.DisplayFor(modelItem => item.Type)
+                    @Utils.FriendlySize(item.Size)
                 </td>
                 <td>
                     @Html.DisplayFor(modelItem => item.CreationDate)
